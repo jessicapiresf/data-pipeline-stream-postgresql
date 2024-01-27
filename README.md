@@ -4,7 +4,7 @@ Repositório criado para o teste técnico para a vaga de Engenheiro de Dados Sr 
 
 <h2>Arquitetura</h2>
 
-<img src="resource/arquitetura.png" alt="Desenho da arquitetura proposta">
+<img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
 A arquitetura proposta contempla uma solução de completa ponta a ponta de ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto temos as etapas:
 
