@@ -1,6 +1,6 @@
 # JuntosSomosMais
 
-Repositório criado para o teste técnico para a vaga de Engenheiro de Dados Sr na empresa JuntosSomosMais
+Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL na Azure com Databricks. 
 
 <h2>Arquitetura</h2>
 
