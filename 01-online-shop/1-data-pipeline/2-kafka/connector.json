@@ -1,0 +1,32 @@
+{
+    "name": "postgres-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "{HOST}",
+        "database.port": "5432",
+        "database.user": "{USER}",
+        "database.password": "{PASSWORD}",
+        "database.dbname": "{DATABASE}",
+        "database.server.name": "postgres",
+        "heartbeat.interval.ms": "5000",
+        "slot.name": "debezium",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": "false",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "false",
+        "include.schema.changes": "false",
+        "plugin.name": "pgoutput",
+        "publication.name": "debezium",
+        "publication.autocreate.mode": "filtered",
+        "snapshot.mode": "initial",
+        "table.include.list": "{TABLES}",
+        "signal.data.collection": "public.debezium_signals",
+        "topic.creation.enable": "true",
+        "topic.creation.default.replication.factor": 1,
+        "topic.creation.default.partitions": 1,
+        "topic.creation.default.cleanup.policy": "compact",
+        "topic.creation.default.compression.type": "lz4",
+        "errors.log.enable": "true"
+    }
+}
