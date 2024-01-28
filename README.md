@@ -2,7 +2,7 @@
 
 Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL com Azure e Databricks e utilização do Kafka e Debezium para CDC.
 
-<h2>Arquitetura</h2>
+# Arquitetura
 
 
 A arquitetura contempla uma solução ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
@@ -10,7 +10,7 @@ A arquitetura contempla uma solução ponta a ponta, com ingestão, transformaç
 
 <img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
-<h2>Data Source</h2>
+## Data Source
 Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte temos a seguinte estrutura de dados que precisaremos lidar:
 
 * Fonte de dados para replicação: https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data
@@ -30,15 +30,13 @@ Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte t
   
 O banco deve permitir replicação lógica para que seja possível seguir com a replicação stream no Kafka. 
 
-<h2>Data Pipeline</h2>
+## Data Pipeline
 
 <h3>1. Ingestão</h3>
 Definimos que a ingestão será realizada via Kafka + Debezium. O uso conjunto do Apache Kafka e do Debezium oferece uma solução robusta e escalável para a captura de mudanças de dados em tempo real (CDC) em sistemas de banco de dados. Kafka atua como uma plataforma de streaming distribuída, capaz de lidar com grandes volumes de dados, garantindo alta disponibilidade e tolerância a falhas. Ele permite a transmissão de dados entre diferentes sistemas e aplicações de forma confiável e eficiente. Já o Debezium é um projeto de CDC que se integra aos sistemas de bancos de dados, capturando e enviando cada alteração de dados (como inserções, atualizações e exclusões) para um tópico Kafka. Esta combinação possibilita a construção de arquiteturas de dados reativas e orientadas a eventos, onde as mudanças nos dados são propagadas em tempo real através de um ecossistema de sistemas, permitindo uma ampla gama de aplicações, desde análises em tempo real até a sincronização entre diferentes bancos de dados e sistemas de processamento de dados.
 
 No repositório podemos encontrar um exemplo de configuração dessas duas ferramentas para o PostgreSQL. 
 
-
-## Kafka
  * [2-kafka](./01-onlineshop/1-data-pipeline/2-kafka) 
    * [docker-compose.yaml](./01-onlineshop/1-data-pipeline/2-kafka/docker-compose.yaml)
    * [connector.json](./01-onlineshop/1-data-pipeline/2-kafka/connector.json)
@@ -54,7 +52,7 @@ Observações:
 * Esses topicos serão usados pelo Debezium para controlar o estado dos conectores cadastrados e o ponto em que a leitura foi realizada até o momento: offset.
 
 
-<h3>2. Transformações</h3>
+### 2. Transformações
 Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar as transformações para as camadas bronze, prata e ouro. Para isso, teremos a seguinte estrutura dentro do workspace do Databricks:
 
  * [1-databricks](./01-onlineshop/1-data-pipeline/1-databricks)
@@ -67,6 +65,8 @@ Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar a
 Os notebooks dentro de setup remetem as configurações iniciais para a criação da estrutura para funcionamento entre Databricks e Azure, como criação das conexões e montagem do ADLS. Para que isso seja possível e funcione será necessário criar um Registro de Aplicativo na Azure, pois as credenciais serão necessárias para montar o ADLS.
 
 O arquivo [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele fará a transformação para as camadas Bronze, Silver e Gold.
+
+Obs: Como é apenas um modelo, todo o pipe está em um único arquivo, mas o ideal é separar cada transformação em arquivos e diretórios diferentes (Bronze, Prata e Gold) para facilitar a manutenção desses códigos no dia-a-dia.  
 
 No Databricks o Workflow final terá o seguinte fluxo contínuo:
 
