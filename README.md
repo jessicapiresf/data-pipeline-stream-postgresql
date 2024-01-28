@@ -45,7 +45,7 @@ Um exemplo de arquivo json gerado pelo Debezium de ingestão de novos registros 
 
 Para funcionamento do CDC, precisaremos configurar no Azure Event Hub um workspace para essa solução. Com os dados chegando em nossos tópicos no Event Hub (que serão criados automaticamente com o Kafka, através das configurações passadas no código) poderemos criar no Azure Stream Analytics um trabalho onde a entrada são os eventos do hub e a saída é a escrita desses arquivos de alterações no Azure DataLake Storage Gen2 em formato Parquet no Container "landing-zone". Com isso teremos implementado nossa camada raw em nosso lakehouse. 
 
-Observações:
+**Observações:**
 
 * O Debezium irá criar um slot de replicação dentro do postgres chamado "debezium", mas você pode configurar através do parametro "slot.name" do conector.
 * Serão gerados 3 hubs/topicos dentro do Event Hubs respectivamente chamados de postgres-dev-configs, postgres-dev-offsets e postgres-dev-status. Eles podem ser configurados dentro do docker-compose alterando as váriaveis: CONFIG_STORAGE_TOPIC, OFFSET_STORAGE_TOPIC, STATUS_STORAGE_TOPIC.
@@ -66,7 +66,7 @@ Os notebooks dentro de setup remetem as configurações iniciais para a criaçã
 
 O arquivo [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele fará a transformação para as camadas Bronze, Silver e Gold.
 
-Obs: Como é apenas um modelo, todo o pipe está em um único arquivo, mas o ideal é separar cada transformação em arquivos e diretórios diferentes (Bronze, Prata e Gold) para facilitar a manutenção desses códigos no dia-a-dia.  
+*Obs: Como é apenas um modelo, todo o pipe está em um único arquivo, mas o ideal é separar cada transformação em arquivos e diretórios diferentes (Bronze, Prata e Gold) para facilitar a manutenção desses códigos no dia-a-dia.*  
 
 No Databricks o Workflow final terá o seguinte fluxo contínuo:
 
