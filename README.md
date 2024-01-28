@@ -1,18 +1,18 @@
 # JuntosSomosMais
 
-Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL na Azure com Databricks. 
+Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL com Azure e Databricks. 
 
 <h2>Arquitetura</h2>
 
 <img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
-A arquitetura proposta contempla uma solução de completa ponta a ponta de ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto temos as etapas:
+A arquitetura contempla uma solução de completa ponta a ponta de ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto temos as etapas:
 
 <h2>Data Source</h2>
-Considerando que usaremos um banco PosgresSQL para lidar com os dados (https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data) temos a seguinte estrutura de dados que precisaremos lidar:
+Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte (https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data) temos a seguinte estrutura de dados que precisaremos lidar:
 
 * Banco de dados: business
-* Tabela: online-shop
+* Tabela: onlineshop
 
 O banco deve permitir replicação lógica para que seja possível seguir com a replicação stream no Kafka. 
 
@@ -30,17 +30,22 @@ Observações:
 * O Debezium irá criar um slot de replicação dentro do postgres chamado "debezium", mas você pode configurar através do parametro "slot.name" do conector.
 * Serão gerados 3 hubs/topicos dentro do Event Hubs respectivamente chamados de postgres-dev-configs, postgres-dev-offsets e postgres-dev-status. Eles podem ser configurados dentro do docker-compose alterando as váriaveis: CONFIG_STORAGE_TOPIC, OFFSET_STORAGE_TOPIC, STATUS_STORAGE_TOPIC.
 * Esses topicos serão usados pelo Debezium para controlar o estado dos conectores cadastrados e o ponto em que a leitura foi realizada até o momento: offset.
+     
 
 <h3>2. Transformações</h3>
 Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar as transformações para as camadas bronze, prata e ouro. Para isso, teremos a seguinte estrutura dentro do workspace do Databricks:
 
-* 0-setup
-* 1-bronze
-* 2-prata
-* 3-ouro
-* 4-analises
+# Databricks
+ * [0-setup](./01-onlineshop/1-data-pipeline/1-databricks/0-setup)
+   * [1-mount-ADLS.ipynb](./01-onlineshop/1-data-pipeline/1-databricks/0-setup/1-mount-ADLS.ipynb)
+ * [1-transformation](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation)
+   * [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql)
+     
 
-Os notebooks dentro de setup remetem as configurações iniciais para a criação da estrutura para funcionamento entre Databricks e Azure, como criação das conexões e montagem do ADLS. 
-Para que isso seja possível e funcione será necessário criar um Registro de Aplicativo na Azure, pois as credenciais serão necessárias para montar o ADLS.
+Os notebooks dentro de setup remetem as configurações iniciais para a criação da estrutura para funcionamento entre Databricks e Azure, como criação das conexões e montagem do ADLS. Para que isso seja possível e funcione será necessário criar um Registro de Aplicativo na Azure, pois as credenciais serão necessárias para montar o ADLS.
+
+O arquivo [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele fará a transformação para as camadas Bronze, Silver e Gold.
+
+
 
 
