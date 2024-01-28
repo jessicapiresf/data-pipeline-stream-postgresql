@@ -5,17 +5,29 @@ Proposta de criação de uma arquitetura de dados com ingestão stream de banco 
 <h2>Arquitetura</h2>
 
 
-A arquitetura contempla uma solução de completa, ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
+A arquitetura contempla uma solução ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
 
 
 <img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
 <h2>Data Source</h2>
-Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte (https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data) temos a seguinte estrutura de dados que precisaremos lidar:
+Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte temos a seguinte estrutura de dados que precisaremos lidar:
 
-* Banco de dados: business
+* Fonte de dados para replicação: https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data
+* Banco de dados a ser criado: business
 * Tabela: onlineshop
+* Colunas:
+   - id SERIAL PRIMARY KEY
+   - TransactionNo (categorical)
+   - Date (numeric)
+   - ProductNo  (categorical)
+   - Product  (categorical)
+   - Price (numeric)
+   - Quantity (numeric)
+   - CustomerNo (categorical)
+   - Country (categorical)
 
+  
 O banco deve permitir replicação lógica para que seja possível seguir com a replicação stream no Kafka. 
 
 <h2>Data Pipeline</h2>
@@ -31,8 +43,7 @@ No repositório podemos encontrar um exemplo de configuração dessas duas ferra
    * [docker-compose.yaml](./01-onlineshop/1-data-pipeline/2-kafka/docker-compose.yaml)
    * [connector.json](./01-onlineshop/1-data-pipeline/2-kafka/connector.json)
   
-Um exemplo de arquivo json gerado pelo Debezium de ingestão de novos registros na base pode ser verificado aqui: (./01-onlineshop/0-resources/cdc-json-file-sample)
-     
+Um exemplo de arquivo json gerado pelo Debezium de ingestão de novos registros na base pode ser verificado [aqui](./01-onlineshop/0-resources/cdc-json-file-sample).   
 
 Para funcionamento do CDC, precisaremos configurar no Azure Event Hub um workspace para essa solução. Com os dados chegando em nossos tópicos no Event Hub (que serão criados automaticamente com o Kafka, através das configurações passadas no código) poderemos criar no Azure Stream Analytics um trabalho onde a entrada são os eventos do hub e a saída é a escrita desses arquivos de alterações no Azure DataLake Storage Gen2 em formato Parquet no Container "landing-zone". Com isso teremos implementado nossa camada raw em nosso lakehouse. 
 
@@ -61,6 +72,9 @@ No Databricks o Workflow final terá a seguinte estrutura:
 
 <img src="01-onlineshop/0-resources/pipeline-databricks.png" alt="Desenho da arquitetura proposta">
 
+E por fim, as bases de dados criadas no pipeline e catalogadas no Hive Metastore:
+
+<img src="01-onlineshop/0-resources/bases.png" alt="Desenho da arquitetura proposta">
 
 
 
