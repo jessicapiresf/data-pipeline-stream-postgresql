@@ -55,6 +55,11 @@ Os notebooks dentro de setup remetem as configurações iniciais para a criaçã
 
 O arquivo [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele fará a transformação para as camadas Bronze, Silver e Gold.
 
+No Databricks o Workflow final terá a seguinte estrutura:
+
+<img src="01-onlineshop/0-resources/pipeline-databricks.png" alt="Desenho da arquitetura proposta">
+
+
 
 
 
