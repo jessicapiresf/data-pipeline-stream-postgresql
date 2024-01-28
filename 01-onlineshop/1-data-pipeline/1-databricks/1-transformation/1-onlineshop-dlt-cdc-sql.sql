@@ -1,12 +1,14 @@
 -- Databricks notebook source
 -- MAGIC %md
 -- MAGIC
--- MAGIC # Implementar CDC no pipeline DLT: alterar captura de dados
+-- MAGIC # Implementar CDC no pipeline DLT:
 -- MAGIC
 -- MAGIC -----------------
 -- MAGIC ###### Autor: Jéssica Pires de Freitas
 -- MAGIC -----------------
 -- MAGIC
+-- MAGIC
+-- MAGIC <img src="https://github.com/jessicapiresf/data-pipeline-stream-postgresql/blob/main/01-onlineshop/0-resources/arquitetura.png?raw=true"> 
 -- MAGIC
 -- MAGIC
 
@@ -35,13 +37,13 @@
 -- MAGIC
 -- MAGIC - Manutenção Regular: Escrever um script de processo de CDC é apenas o primeiro passo. Você precisa manter uma solução personalizada que possa mapear regularmente as alterações mencionadas. Isso requer muito tempo e recursos.
 -- MAGIC
--- MAGIC - Sobrecarga: Os desenvolvedores nas empresas já enfrentam o fardo das consultas públicas. O trabalho adicional para a construção de uma solução CDC personalizada afetará os projetos existentes de geração de receitas.
+-- MAGIC - Sobrecarga: Os desenvolvedores nas empresas já enfrentam o fardo das consultas públicas. O trabalho adicional para a construção de uma solução CDC personalizada afetará os projetos existentes.
 -- MAGIC
 -- MAGIC **2- Utilização de ferramentas CDC como Debezium .**
 -- MAGIC
 -- MAGIC Neste repositório estamos usando dados de CDC provenientes de uma ferramenta do Debezium. Como uma ferramenta CDC lê logs de banco de dados: não dependemos mais da atualização de uma determinada coluna pelos desenvolvedores.
 -- MAGIC
--- MAGIC - Uma ferramenta CDC como o Debezium se encarrega de capturar cada linha alterada. Ele registra o histórico de alterações de dados nos logs do Kafka, de onde seu aplicativo os consome.
+-- MAGIC - Uma ferramenta CDC como o Debezium se encarrega de capturar cada linha alterada. Ele registra o histórico de alterações de dados nos logs do Kafka, de onde o aplicativo os consome.
 
 -- COMMAND ----------
 
@@ -59,11 +61,8 @@
 -- MAGIC - Uma ferramenta CDC lê logs de banco de dados, produz mensagens json que incluem as alterações e transmite os registros com a descrição das alterações para Kafka
 -- MAGIC - Kafka transmite as mensagens que contêm operações INSERT, UPDATE e DELETE e as armazena no armazenamento de objetos em nuvem (pasta S3, ADLS, etc).
 -- MAGIC - Usando o Autoloader, carregamos gradativamente as mensagens do armazenamento de objetos em nuvem e as armazenamos na tabela Bronze, à medida que armazena as mensagens brutas
--- MAGIC - Em seguida, podemos executar APPLY CHANGES INTO na tabela limpa da camada Bronze para propagar os dados mais atualizados downstream para a Silver Table
+-- MAGIC - Em seguida, podemos executar APPLY CHANGES INTO na tabela limpa da camada Bronze para propagar os dados mais atualizados para a Silver Table
 -- MAGIC
--- MAGIC Aqui está o fluxo que implementaremos, consumindo dados do CDC de um banco de dados externo. Observe que a entrada pode ter qualquer formato, incluindo fila de mensagens como Kafka.
--- MAGIC
--- MAGIC <img src="https://raw.githubusercontent.com/databricks/delta-live-tables-notebooks/main/change-data-capture-example/images/cdc_flow_new.png" alt='Prepare todos os seus dados para BI e ML'/>
 
 -- COMMAND ----------
 
@@ -95,11 +94,14 @@
 
 -- COMMAND ----------
 
--- DBTITLE 1,Vamos explorar nossos dados recebidos - Tabela Bronze - Autoloader e DLT
 
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Vamos explorar nossos dados recebidos - Tabela Bronze - Autoloader e DLT
 SET spark.source;
 CREATE OR REFRESH STREAMING LIVE TABLE onlineshop_bronze (
-    id long,
+    id string,
     transactionno long,
     date string,
     productno long,
@@ -113,47 +115,54 @@ CREATE OR REFRESH STREAMING LIVE TABLE onlineshop_bronze (
     EventEnqueuedUtcTime string
 )
 TBLPROPERTIES ("quality" = "bronze")
-COMMENT "Novos dados onlineshop ingeridos de forma incremental em landing-zone"
-AS SELECT
-    after.id,
-    after.transactionno,
-    after.date,
-    after.productno,
-    after.productname,
-    after.price,
+COMMENT "New online shop data incrementally ingested from cloud object storage landing zone"
+AS 
+SELECT
+    CAST(after.id AS string) as id,
+    after.transactionno AS transactionno,
+    after.date AS date,
+    after.productno AS productno,
+    after.productname AS productname,
+    after.price AS price,
     CAST(after.customerno AS string) AS customerno,
-    after.quantity,
-    after.country,
+    after.quantity AS quantity,
+    after.country AS country,
     op,
-    to_utc_timestamp(CAST(ts_ms / 1000 AS timestamp), 'UTC') AS operation_date,
+    to_utc_timestamp(CAST(source.ts_ms / 1000 AS timestamp), 'UTC') AS operation_date,
     EventEnqueuedUtcTime
 FROM
     cloud_files(
-        "/mnt/pjstglakehouse/landing-zone/onlineshop_cdc",
+        "/mnt/pjstglakehouse/landing-zone/cdc/onlineshop",
         "json",
-        map("cloudFiles.inferColumnTypes", "true")
-    )
-;
+    map("cloudFiles.inferColumnTypes", "true")
+  );
+
 
 -- COMMAND ----------
 
 -- DBTITLE 1,Camada Prata - Tabela Limpa (Impor Restrições)
 CREATE OR REFRESH TEMPORARY STREAMING LIVE TABLE onlineshop_bronze_clean_v(
-  CONSTRAINT valid_id EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_id EXPECT (id IS NOT NULL),
   CONSTRAINT valid_transactionno EXPECT (transactionno IS NOT NULL),
-  CONSTRAINT valid_operation EXPECT (op IS NOT NULL) ON VIOLATION DROP ROW
+  CONSTRAINT valid_date EXPECT (date IS NOT NULL),
+  CONSTRAINT valid_productno EXPECT (productno IS NOT NULL),
+  CONSTRAINT valid_productname EXPECT (productname IS NOT NULL),
+  CONSTRAINT valid_price EXPECT (price IS NOT NULL),
+  CONSTRAINT valid_quantity EXPECT (quantity IS NOT NULL),
+  CONSTRAINT valid_country EXPECT (country IS NOT NULL)
 )
 TBLPROPERTIES ("quality" = "silver")
-COMMENT "Cleansed bronze customer view (i.e. what will become Silver)"
-AS SELECT * 
+COMMENT "Cleansed bronze online shop view (i.e. what will become Silver)"
+AS SELECT *
 FROM STREAM(LIVE.onlineshop_bronze);
+
 
 -- COMMAND ----------
 
 -- MAGIC %md-sandbox
 -- MAGIC ## Materializando a tabela Prata
 -- MAGIC
--- MAGIC A tabela silver `onlineshop_silver` conterá a visualização mais atualizada. Será uma réplica da tabela MYSQL original.
+-- MAGIC A tabela silver `onlineshop_silver` conterá a visualização mais atualizada. Será uma réplica da tabela PostgresSQL original.
 -- MAGIC
 -- MAGIC Para propagar as operações a camada Silver, devemos habilitar explicitamente o recurso no pipeline adicionando e habilitando a configuração applyChanges nas configurações do pipeline DLT
 -- MAGIC
@@ -163,7 +172,7 @@ FROM STREAM(LIVE.onlineshop_bronze);
 -- DBTITLE 1,Excluir registros indesejados - Silver Table - DLT SQL 
 CREATE OR REFRESH STREAMING LIVE TABLE onlineshop_silver
 TBLPROPERTIES ("quality" = "silver")
-COMMENT "Clean, merged customers";
+COMMENT "Clean, merged onlineshop";
 
 -- COMMAND ----------
 
@@ -173,3 +182,24 @@ FROM stream(LIVE.onlineshop_bronze_clean_v)
   APPLY AS DELETE WHEN op = "d"
   SEQUENCE BY operation_date --auto-incremental ID to identity order of events
   COLUMNS * EXCEPT (operation_date, EventEnqueuedUtcTime)
+
+-- COMMAND ----------
+
+-- MAGIC %md-sandbox
+-- MAGIC ## Tabela Gold
+-- MAGIC
+-- MAGIC A tabela gold `onlineshop_gold` conterá um relatório baseado no número do produto, com a o total de quantidade e o valor total referente ao productno.
+-- MAGIC
+
+-- COMMAND ----------
+
+CREATE OR REPLACE LIVE TABLE onlineshop_gold_sales_report
+TBLPROPERTIES(pipelines.reset.allowed = false)
+COMMENT "Aggregated report by product number"
+AS SELECT 
+    productno,
+    SUM(quantity) as total_quantity_sold,
+    SUM(price * quantity) as total_sales_value
+FROM LIVE.onlineshop_silver
+GROUP BY productno;
+
