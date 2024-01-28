@@ -1,12 +1,14 @@
 # data-pipeline-stream-postgresql
 
-Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL com Azure e Databricks. 
+Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL com Azure e Databricks e utilização do Kafka e Debezium para CDC.
 
 <h2>Arquitetura</h2>
 
-<img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
-A arquitetura contempla uma solução de completa ponta a ponta de ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto temos as etapas:
+A arquitetura contempla uma solução de completa, ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
+
+
+<img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
 <h2>Data Source</h2>
 Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte (https://www.kaggle.com/datasets/gabrielramos87/an-online-shop-business/data) temos a seguinte estrutura de dados que precisaremos lidar:
