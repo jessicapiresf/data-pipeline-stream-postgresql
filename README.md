@@ -1,4 +1,4 @@
-# JuntosSomosMais
+# data-pipeline-stream-postgresql
 
 Proposta de criação de uma arquitetura de dados com ingestão stream de banco de dados PostgresSQL com Azure e Databricks. 
 
