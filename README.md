@@ -58,11 +58,11 @@ Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar a
  * [1-databricks](./onlineshop/1-data-pipeline/1-databricks)
       * [0-setup](./onlineshop/1-data-pipeline/1-databricks/0-setup)
         * [1-mount-ADLS.ipynb](./onlineshop/1-data-pipeline/1-databricks/0-setup/1-mount-ADLS.ipynb)
-      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/bronze)
+      * [1-bronze](./onlineshop/1-data-pipeline/1-databricks/1-bronze)
         * [onlineshop-bronze.sql](./onlineshop/1-data-pipeline/1-databricks/1-bronze/onlineshop-bronze.sql)
-      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/silver)
+      * [2-silver](./onlineshop/1-data-pipeline/1-databricks/2-silver)
         * [onlineshop-silver.sql](./onlineshop/1-data-pipeline/1-databricks/2-silver/onlineshop-silver.sql)
-      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/gold)
+      * [3-gold](./onlineshop/1-data-pipeline/1-databricks/3-gold)
         * [onlineshop-gold-sales_report.sql](./onlineshop/1-data-pipeline/1-databricks/3-gold/onlineshop-gold-sales_report.sql)
           
 
