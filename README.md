@@ -68,9 +68,9 @@ Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar a
 
 Os notebooks dentro de setup remetem as configurações iniciais para a criação da estrutura para funcionamento entre Databricks e Azure, como criação das conexões e montagem do ADLS. Para que isso seja possível e funcione será necessário criar um Registro de Aplicativo na Azure, pois as credenciais serão necessárias para montar o ADLS.
 
-O arquivo [onlineshop-bronze.sql](./onlineshop/1-data-pipeline/1-databricks/1-bronze/onlineshop-bronze.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele a replicação dos dados na camada Bronze. 
+O arquivo [onlineshop-bronze.sql](./onlineshop/1-data-pipeline/1-databricks/1-bronze/onlineshop-bronze.sql) é responsável por ler os dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele a replicação dos dados na camada Bronze. 
 
-O arquivo [onlineshop-silver.sql](./onlineshop/1-data-pipeline/1-databricks/2-silver/onlineshop-silver.sql)faz a leitura dos dados da camada bronze e aplica uma camada de qualidade em cima desses dados, formando uma base mais sólida e consistente.
+O arquivo [onlineshop-silver.sql](./onlineshop/1-data-pipeline/1-databricks/2-silver/onlineshop-silver.sql) faz a leitura dos dados da camada bronze e aplica uma camada de qualidade em cima desses dados, formando uma base mais sólida e consistente.
 
 O arquivo [onlineshop-gold-sales_report.sql](./onlineshop/1-data-pipeline/1-databricks/3-gold/onlineshop-gold-sales_report.sql) define uma tabela materializada com aplicação de regra de negócio. A tabela especifica trata de um relatório onde é agupado os valores totais e venda referente ao produto.
 
