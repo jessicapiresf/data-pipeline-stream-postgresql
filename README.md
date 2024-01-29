@@ -8,7 +8,7 @@ Proposta de criação de uma arquitetura de dados com ingestão stream de banco 
 A arquitetura contempla uma solução ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
 
 
-<img src="01-onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
+<img src="onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
 
 ## Data Source
 Considerando que usaremos um banco PosgresSQL para lidar com os dados da fonte temos a seguinte estrutura de dados que precisaremos lidar:
@@ -37,11 +37,11 @@ Definimos que a ingestão será realizada via Kafka + Debezium. O uso conjunto d
 
 No repositório podemos encontrar um exemplo de configuração dessas duas ferramentas para o PostgreSQL. 
 
- * [2-kafka](./01-onlineshop/1-data-pipeline/2-kafka) 
-   * [docker-compose.yaml](./01-onlineshop/1-data-pipeline/2-kafka/docker-compose.yaml)
-   * [connector.json](./01-onlineshop/1-data-pipeline/2-kafka/connector.json)
+ * [2-kafka](./onlineshop/1-data-pipeline/2-kafka) 
+   * [docker-compose.yaml](./onlineshop/1-data-pipeline/2-kafka/docker-compose.yaml)
+   * [connector.json](./onlineshop/1-data-pipeline/2-kafka/connector.json)
   
-Um exemplo de arquivo json gerado pelo Debezium de ingestão de novos registros na base pode ser verificado [aqui](./01-onlineshop/0-resources/cdc-json-file-sample).   
+Um exemplo de arquivo json gerado pelo Debezium de ingestão de novos registros na base pode ser verificado [aqui](./onlineshop/0-resources/cdc-json-file-sample).   
 
 Para funcionamento do CDC, precisaremos configurar no Azure Event Hub um workspace para essa solução. Com os dados chegando em nossos tópicos no Event Hub (que serão criados automaticamente com o Kafka, através das configurações passadas no código) poderemos criar no Azure Stream Analytics um trabalho onde a entrada são os eventos do hub e a saída é a escrita desses arquivos de alterações no Azure DataLake Storage Gen2 em formato Parquet no Container "landing-zone". Com isso teremos implementado nossa camada raw em nosso lakehouse. 
 
@@ -55,26 +55,35 @@ Para funcionamento do CDC, precisaremos configurar no Azure Event Hub um workspa
 ### 2. Transformações
 Com os dados disponíveis em landing-zone, usaremos o Databricks para realizar as transformações para as camadas bronze, prata e ouro. Para isso, teremos a seguinte estrutura dentro do workspace do Databricks:
 
- * [1-databricks](./01-onlineshop/1-data-pipeline/1-databricks)
-      * [0-setup](./01-onlineshop/1-data-pipeline/1-databricks/0-setup)
-        * [1-mount-ADLS.ipynb](./01-onlineshop/1-data-pipeline/1-databricks/0-setup/1-mount-ADLS.ipynb)
-      * [1-transformation](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation)
-        * [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql)
+ * [1-databricks](./onlineshop/1-data-pipeline/1-databricks)
+      * [0-setup](./onlineshop/1-data-pipeline/1-databricks/0-setup)
+        * [1-mount-ADLS.ipynb](./onlineshop/1-data-pipeline/1-databricks/0-setup/1-mount-ADLS.ipynb)
+      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/bronze)
+        * [onlineshop-bronze.sql](./onlineshop/1-data-pipeline/1-databricks/1-bronze/onlineshop-bronze.sql)
+      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/silver)
+        * [onlineshop-silver.sql](./onlineshop/1-data-pipeline/1-databricks/2-silver/onlineshop-silver.sql)
+      * [1-transformation](./onlineshop/1-data-pipeline/1-databricks/gold)
+        * [onlineshop-gold-sales_report.sql](./onlineshop/1-data-pipeline/1-databricks/3-gold/onlineshop-gold-sales_report.sql)
           
 
 Os notebooks dentro de setup remetem as configurações iniciais para a criação da estrutura para funcionamento entre Databricks e Azure, como criação das conexões e montagem do ADLS. Para que isso seja possível e funcione será necessário criar um Registro de Aplicativo na Azure, pois as credenciais serão necessárias para montar o ADLS.
 
-O arquivo [1-onlineshop-dlt-cdc-sql.sql](./01-onlineshop/1-data-pipeline/1-databricks/1-transformation/1-onlineshop-dlt-cdc-sql.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele fará a transformação para as camadas Bronze, Silver e Gold.
+O arquivo [onlineshop-bronze.sql](./onlineshop/1-data-pipeline/1-databricks/1-bronze/onlineshop-bronze.sql) é responsável pelo pipeline, onde teremos um modelo de código que lê dados em stream do bucket onde os dados de CDC serão entregues e a partir disso ele a replicação dos dados na camada Bronze. 
 
-*Obs: Como é apenas um modelo, todo o pipe está em um único arquivo, mas o ideal é separar cada transformação em arquivos e diretórios diferentes (Bronze, Prata e Gold) para facilitar a manutenção desses códigos no dia-a-dia.*  
+O arquivo [onlineshop-silver.sql](./onlineshop/1-data-pipeline/1-databricks/2-silver/onlineshop-silver.sql)faz a leitura dos dados da camada bronze e aplica uma camada de qualidade em cima desses dados, formando uma base mais sólida e consistente.
+
+O arquivo [onlineshop-gold-sales_report.sql](./onlineshop/1-data-pipeline/1-databricks/3-gold/onlineshop-gold-sales_report.sql) define uma tabela materializada com aplicação de regra de negócio. A tabela especifica trata de um relatório onde é agupado os valores totais e venda referente ao produto.
+
 
 No Databricks o Workflow final terá o seguinte fluxo contínuo:
 
-<img src="01-onlineshop/0-resources/pipeline-databricks.png" alt="Desenho da arquitetura proposta">
+<img src="onlineshop/0-resources/pipeline-databricks.png" alt="Desenho da arquitetura proposta">
 
-E por fim, as bases de dados criadas no pipeline estarão catalogadas d disponíveis no Hive Metastore:
+*Obs: No databricks deve ser configurado um pipe que faça a leitura dos três sql para termos um pipe completo e ele deve ser configurado para modo contínuo.*
 
-<img src="01-onlineshop/0-resources/bases.png" alt="Desenho da arquitetura proposta">
+Por fim, as bases de dados criadas no pipeline estarão catalogadas e disponíveis no Hive Metastore:
+
+<img src="onlineshop/0-resources/bases.png" alt="Desenho da arquitetura proposta">
 
 
 
