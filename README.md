@@ -5,7 +5,7 @@ Proposta de criação de uma arquitetura de dados com ingestão stream de banco 
 # Arquitetura
 
 
-A arquitetura contempla uma solução ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Seguindo o desenho proposto:
+A arquitetura contempla uma solução ponta a ponta, com ingestão, transformação e disponibilização de dados advindos de um banco de dados PostgreSQL. Desenho da arquitetura:
 
 
 <img src="onlineshop/0-resources/arquitetura.png" alt="Desenho da arquitetura proposta">
